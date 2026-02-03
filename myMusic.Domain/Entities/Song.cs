@@ -1,6 +1,6 @@
 namespace myMusic.Domain.Entities;
 
-public class Songs
+public class Song
 {
     public int Id { get; set; }
     public string SongName { get; set; }
@@ -12,5 +12,5 @@ public class Songs
     public DateTime UpdatedAt { get; set; }
     
     // Relations:
-    
+    public ICollection<PlaylistSong> PlaylistSongs { get; set; } = new List<PlaylistSong>();
 }
