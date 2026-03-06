@@ -2,7 +2,7 @@ using myMusic.Domain.Entities;
 
 namespace myMusic.Domain.Interfaces;
 
-public interface IPlaylist
+public interface IPlaylistRespository
 {
     Task<IEnumerable<Playlist>> GetAllPlaylistAsync();
     Task<IEnumerable<Playlist>> GetByUserIdAsync(int userId);

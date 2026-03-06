@@ -2,7 +2,7 @@ using myMusic.Domain.Entities;
 
 namespace myMusic.Domain.Interfaces;
 
-public interface IPlaylistSong
+public interface IPlaylistSongRepository
 {
     Task<bool> AddSongToPlaylistAsync(PlaylistSong playlistSong);
     Task<bool> RemoveSongFromPlaylistAsync(int playlistId, int songId);
