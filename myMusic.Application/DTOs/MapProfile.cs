@@ -7,6 +7,6 @@ public class MapProfile : Profile
     public MapProfile()
     {
         // JWT
-        CreateMap<>()
+        // CreateMap<>()
     }
 }

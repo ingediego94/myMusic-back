@@ -1,3 +1,4 @@
+using System.Reflection.Metadata.Ecma335;
 using Microsoft.EntityFrameworkCore;
 using myMusic.Domain.Entities;
 using myMusic.Domain.Interfaces;
@@ -30,9 +31,26 @@ public class UserRepository : IUserRepository
     }
 
     
+    // Get By Email:
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    
+    // Get By UserName:
+    public async Task<User?> GetByUserNameAsync(string userName)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+    }
+
+
     // Create:
     public async Task<User> CreateAsync(User user)
     {
+        user.CreatedAt = DateTime.UtcNow;   // Asegurar las fechas desde el repo.
+        user.UpdatedAt = DateTime.UtcNow;
+        
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
         return user;
@@ -42,6 +60,7 @@ public class UserRepository : IUserRepository
     // Update:
     public async Task<User?> UpdateAsync(User user)
     {
+        user.UpdatedAt = DateTime.UtcNow;   // Igual, aseguro la fecha.
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
         return user;
