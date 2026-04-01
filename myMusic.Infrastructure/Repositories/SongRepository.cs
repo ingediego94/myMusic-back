@@ -49,10 +49,9 @@ public class SongRepository : ISongRepository
 
     
     // Delete song:
-    public async Task<bool?> DeleteAsync(Song song)
+    public async Task<bool> DeleteAsync(Song song)
     {
         _context.Songs.Remove(song);
-        await _context.SaveChangesAsync();
-        return true;
+        return await _context.SaveChangesAsync() > 0;
     }
 }

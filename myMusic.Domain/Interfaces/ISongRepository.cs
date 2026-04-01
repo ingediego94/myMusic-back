@@ -8,5 +8,5 @@ public interface ISongRepository
     Task<Song?> GetByIdAsync(int id);
     Task<Song> AddAsync(Song song);
     Task<Song?> UpdateAsync(Song song);
-    Task<bool?> DeleteAsync(Song song);
+    Task<bool> DeleteAsync(Song song);
 }

@@ -27,6 +27,7 @@ public class PlaylistSongRepository : IPlaylistSongRepository
     // Add a new song to a playlist:
     public async Task<bool> AddSongToPlaylistAsync(PlaylistSong playlistSong)
     {
+        // Check if the song is already in the playlist:
         var exists = await IsSongInPlaylistAsync(playlistSong.PlaylistId, playlistSong.SongId);
         if (exists) return false;
         

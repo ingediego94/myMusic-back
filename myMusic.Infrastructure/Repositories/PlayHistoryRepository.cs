@@ -17,15 +17,18 @@ public class PlayHistoryRepository : IPlayHistoryRepository
     // -------------------------------------------------------------
     
     // Get user history:
-    public async Task<IEnumerable<PlayHistory>> GetUserHistoryAsync(int userId)
+    public async Task<IEnumerable<PlayHistory>> GetUserHistoryAsync(int userId, int limit = 100)
     {
         return await _context.PlayHistories
             .Include(ph => ph.Song)
             .Where(ph => ph.UserId == userId)
             .OrderByDescending(ph => ph.PlayedAt)
+            .Take(limit)
             .ToListAsync();
     }
 
+    
+    // Add history:
     public async Task<PlayHistory> AddAsync(PlayHistory history)
     {
         history.PlayedAt = DateTime.UtcNow;

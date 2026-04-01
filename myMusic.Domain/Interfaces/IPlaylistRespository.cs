@@ -9,5 +9,5 @@ public interface IPlaylistRespository
     Task<Playlist?> GetByIdWithSongsAsync(int id);
     Task<Playlist> CreatePlaylistAsync(Playlist playlist);
     Task<Playlist> UpdatePlaylistAsync(Playlist playlist);
-    Task<bool> DeletePlaylistAsync(Playlist playlist);
+    Task<bool> DeletePlaylistAsync(Playlist playlist);  //int id
 }
