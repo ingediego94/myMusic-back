@@ -97,9 +97,9 @@ public class AuthService : IAuthService
 
     
     // REVOKE:
-    public async Task<bool> RevokeAsync(string refreshToken)
+    public async Task<bool> RevokeAsync(RevokeTokenDto revokeTokenDto)
     {
-        return await _tokenRepository.DeleteAsync(refreshToken);
+        return await _tokenRepository.DeleteAsync(revokeTokenDto.RefreshToken);
     }
     
     

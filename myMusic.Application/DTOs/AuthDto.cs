@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using myMusic.Domain.Enums;
 
 namespace myMusic.Application.DTOs;
@@ -6,10 +7,20 @@ namespace myMusic.Application.DTOs;
 // Register:
 public class RegisterDto
 {
+    [Required(ErrorMessage = "El nombre es obligatorio.")]
+    [StringLength(50)]
     public string Name { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "El apellido es obligatorio.")]
+    [StringLength(50)]
     public string LastName { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "El correo es obligatorio.")]
+    [EmailAddress(ErrorMessage = "Formato de correo inválido.")]
     public string Email { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "La contraseña es obligatoria.")]
+    [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres.")]
     public string Password { get; set; } = string.Empty;
 }
 
@@ -34,8 +45,12 @@ public class UserRegisterResponseDto
 // Login:
 public class LoginDto
 {
-    public string Email { get; set; }
-    public string Password { get; set; }
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+    
+    [Required]
+    public string Password { get; set; } = string.Empty;
 }
 
 
@@ -61,13 +76,17 @@ public class UserAuthResponseDto
 // To refresh:
 public class RefreshDto
 {
-    public string Token { get; set; }
-    public string RefreshToken { get; set; }
+    [Required]
+    public string Token { get; set; } = string.Empty;
+    
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
 }
 
 
 // Revoke Token:
 public class RevokeTokenDto
 {
-    public string Email { get; set; }
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
 }
