@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
@@ -74,21 +76,59 @@ public class AuthService : IAuthService
     // REFRESH:
     public async Task<UserAuthResponseDto> RefreshAsync(RefreshDto refreshDto)
     {
-        throw new NotImplementedException();
+        // 1. Obtener el token de la DB con su usuario
+        var savedToken = await _tokenRepository.GetTokenWithUserAsync(refreshDto.RefreshToken);
+
+        if (savedToken == null || savedToken.RefreshTokenExpire <= DateTime.UtcNow)
+            throw new SecurityException("Refresh Token inválido o expirado.");
+        
+        // 2. Validar que el Access Token pertenezca a este usuario (aunque esté expirado)
+        var principal = GetPrincipalFromExpiredToken(refreshDto.Token);
+        var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim == null || int.Parse(userIdClaim) != savedToken.UserId)
+            throw new SecurityException("Token inconsistente.");
+        
+        // 3. Opcional: Borrar el refresh token viejo para "rotarlo"
+        await _tokenRepository.DeleteAsync(savedToken.RefreshToken!);
+
+        return await GenerateTokensAndSaveAsync(savedToken.User);
     }
 
+    
+    // REVOKE:
     public async Task<bool> RevokeAsync(string refreshToken)
     {
-        throw new NotImplementedException();
+        return await _tokenRepository.DeleteAsync(refreshToken);
     }
     
     
-    
+    // ----------------------------------------------------------------
     // METODOS PRIVADOS DE APOYO
     private async Task<UserAuthResponseDto> GenerateTokensAndSaveAsync(User user)
     {
         // Generar JWT:
         var jwtToken = CreateJwtToken(user);
+        var accessToken = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+        
+        // Generar Refresh Token
+        var refreshTokenValue = GenerateRefreshTokenString();
+        
+        // Guardar en la tabla Tokens
+        var tokenEntity = new Token
+        {
+            UserId = user.Id,
+            RefreshToken = refreshTokenValue,
+            RefreshTokenExpire = DateTime.UtcNow.AddDays(_refreshTokenDays)
+        };
+        await _tokenRepository.AddAsync(tokenEntity);
+        
+        //Mapear respuesta:
+        var response = _mapper.Map<UserAuthResponseDto>(user);
+        response.Token = accessToken;
+        response.RefreshToken = refreshTokenValue;
+
+        return response;
     }
 
     
@@ -122,5 +162,39 @@ public class AuthService : IAuthService
             expires: DateTime.UtcNow.AddMinutes(_jwtMinutes),
             signingCredentials: credentials
         );
+    }
+
+    
+    // REFRESH TOKEN:
+    private string GenerateRefreshTokenString()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+    
+    
+    // EXPIRE TOKEN:
+    private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+    {
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
+            ValidateLifetime = false // no validar tiempo aqui ¡
+        };
+
+        var handler = new JwtSecurityTokenHandler();
+        var principal = handler.ValidateToken(token, tokenValidationParameters, out var securityToken);
+
+        if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+            !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256,
+                StringComparison.InvariantCultureIgnoreCase))
+            throw new SecurityException("Token no válido.");
+
+        return principal;
     }
 }
