@@ -67,4 +67,15 @@ public class AuthController : ControllerBase
 
         return Ok(new { message = "Sesión cerrada exitosamente" });
     }
+    
+    // OLVIDÓ SU CONTRASENA:
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
+    {
+        var result = await _authService.ForgotPasswordAsync(forgotPasswordDto);
+
+        if (!result) return BadRequest(new { message = "El correo no se encuentra registrado." });
+
+        return Ok(new { message = "Se ha enviado una contraseña temporal a tu correo electrónico." });
+    }
 }

@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using myMusic.Application.DTOs;
 using myMusic.Application.Interfaces;
 using myMusic.Domain.Entities;
+using myMusic.Domain.Enums;
 using myMusic.Domain.Interfaces;
 
 namespace myMusic.Application.Services;
@@ -19,6 +20,7 @@ public class AuthService : IAuthService
     private readonly ITokenRepository _tokenRepository;
     private readonly IMapper _mapper;
     private readonly IConfiguration _config;
+    private readonly IEmailService _emailService;
 
     // Time Configuration (duration):
     private readonly int _jwtMinutes = 40;
@@ -29,13 +31,15 @@ public class AuthService : IAuthService
         IUserRepository userRepository, 
         ITokenRepository tokenRepository,
         IMapper mapper,
-        IConfiguration config
+        IConfiguration config,
+        IEmailService emailService
         )
     {
         _userRepository = userRepository;
         _tokenRepository = tokenRepository;
         _mapper = mapper;
         _config = config;
+        _emailService = emailService;
     }
     
     // -----------------------------------------------------------------
@@ -43,7 +47,7 @@ public class AuthService : IAuthService
     // REGISTER:
     public async Task<UserRegisterResponseDto> RegisterAsync(RegisterDto registerDto)
     {
-        if (registerDto == null) throw new ArgumentNullException(nameof(registerDto));
+        // if (registerDto == null) throw new ArgumentNullException(nameof(registerDto));
 
         var existingUser = await _userRepository.GetByEmailAsync(registerDto.Email);
         if (existingUser != null)
@@ -51,9 +55,14 @@ public class AuthService : IAuthService
 
         var user = _mapper.Map<User>(registerDto);
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password);
+        user.Role = Role.User;
         user.IsActive = true;
+
+        var newUser = await _userRepository.CreateAsync(user);
         
-        await _userRepository.CreateAsync(user);
+        string welcomeBody = $"""<h1>¡Hola {newUser.Name}!</h1><p>Tu registro ha sido exitoso.</p>""";
+        await _emailService.SendEmailAsync(newUser.Email, "Bienvenido a nuestra plataforma", welcomeBody);
+        // await _userRepository.CreateAsync(user);
         return _mapper.Map<UserRegisterResponseDto>(user);
     }
 
@@ -196,5 +205,32 @@ public class AuthService : IAuthService
             throw new SecurityException("Token no válido.");
 
         return principal;
+    }
+    
+    // REESTABLECER CONTRASENA
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
+    {
+        var user = await _userRepository.GetByEmailAsync(forgotPasswordDto.Email);
+        if (user == null) return false;
+        
+        // Generar contrasena temporal de 8 caracteres:
+        string tempPassword = Guid.NewGuid().ToString()[..8];
+        
+        // Hashear la contrasena temporal:
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+
+        await _userRepository.UpdateAsync(user);
+        
+        // Enviar por email la contrasena temporal:
+        string resetBody = $"""
+                            <h1>Restablecimiento de Contraseña</h1>
+                            <p>Has solicitado restablecer tu contraseña. Tu contraseña temporal de acceso es:</p>
+                            <h2 style="color: #2b2b2b; background: #f4f4f4; padding: 10px; display: inline-block;">{tempPassword}</h2>
+                            <p>Te recomendamos cambiarla inmediatamente una vez inicies sesión.</p>
+                            """;
+        
+        await _emailService.SendEmailAsync(user.Email, "Contraseña Temporal - myMusic", resetBody);
+
+        return true;
     }
 }

@@ -9,6 +9,7 @@ using myMusic.Application.Services;
 using myMusic.Domain.Interfaces;
 using myMusic.Infrastructure.Extensions;
 using myMusic.Infrastructure.Repositories;
+using myMusic.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,7 @@ builder.Services.AddScoped<ISongRepository, SongRepository>();
 builder.Services.AddScoped<IPlaylistRespository, PlaylistRepository>();
 builder.Services.AddScoped<IPlaylistSongRepository, PlaylistSongRepository>();
 builder.Services.AddScoped<IPlayHistoryRepository, PlayHistoryRepository>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // 4. Registro de Servicios (Capa de Aplicación)
 builder.Services.AddScoped<IAuthService, AuthService>();

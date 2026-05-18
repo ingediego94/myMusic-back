@@ -11,7 +11,8 @@ public class MappingProfile : Profile
         // 1. Register: Mapeo básico
         CreateMap<RegisterDto, User>()
             .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
-            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
         
         CreateMap<User, UserRegisterResponseDto>();
             
